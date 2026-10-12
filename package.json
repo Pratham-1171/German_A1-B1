@@ -1,0 +1,22 @@
+{
+  "name": "sprachtreppe",
+  "version": "8.0.0",
+  "private": true,
+  "description": "Sprachtreppe — German A1–B1 course with accounts, weekly sync and teacher review",
+  "scripts": {
+    "build": "python3 scripts/build-course.py",
+    "test": "node --test --test-timeout=240000 \"tests/*.test.js\"",
+    "sync": "cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/filesystem": "^8.1.4",
+    "@capacitor/share": "^8.0.3"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "jsdom": "^26.1.0"
+  }
+}

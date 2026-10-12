@@ -1,0 +1,5 @@
+GitHub's web uploader skips folders whose name starts with a dot, so the real workflow folder (.github) may not upload.
+If the "Actions" tab shows no "Build Android APK" workflow:
+  1. In your repository click  Add file -> Create new file
+  2. Name it exactly:   .github/workflows/build-apk.yml      (typing "/" creates the folders)
+  3. Paste the contents of build-apk.yml (in this folder) and click "Commit changes".
