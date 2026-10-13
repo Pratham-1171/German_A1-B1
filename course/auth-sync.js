@@ -401,6 +401,7 @@
       b.onclick = () => { location.hash = '#/account'; }; hdr.insertBefore(b, set);
     }
     if (isAdmin()) { c.textContent = 'Admin'; c.className = ''; return; }
+    if (isTeacher()) { c.textContent = 'Teacher'; c.className = ''; return; }
     if (!isStudent()) { c.textContent = ''; return; }
     if (!auth.profile.approved) { c.textContent = 'Awaiting approval'; c.className = 'warn'; return; }
     const st = lockState();
