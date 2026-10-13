@@ -1,5 +1,10 @@
 /* Sprachtreppe LMS mobile overflow hardening. */
 html,body{max-width:100%;overflow-x:hidden}
+header{box-sizing:border-box;max-width:100%;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px;overflow:visible}
+header .logo{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header .spacer{min-width:0;flex:1 1 0}
+header #spChip{min-width:0;max-width:30vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header .iconbtn{flex:0 0 auto;box-sizing:border-box}
 .lms-wrap,.lms-head,.lms-grid,.lms-list,.lms-item,.lms-form,.lms-actions,.lms-kpi,.lms-notice,.lms-msg{box-sizing:border-box;min-width:0;max-width:100%}
 .lms-wrap{width:100%;overflow:visible}
 .lms-head>div{min-width:0;max-width:100%}
@@ -17,6 +22,16 @@ html,body{max-width:100%;overflow-x:hidden}
 .lms-table-wrap{max-width:100%;min-width:0;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
 .lms-table{min-width:max-content}
 @media(max-width:650px){
+  header{width:100%;padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right));}
+  header .logo{flex:1 1 100%;width:100%;font-size:13px;line-height:1.2;}
+  header .logo span{font-size:10px;}
+  header .spacer{display:none}
+  header #spChip{order:2;flex:1 1 auto;max-width:none;overflow:hidden;text-overflow:ellipsis;}
+  header #spAcct{order:3}
+  header #langBtn{order:4}
+  header #themeBtn{order:5}
+  header #settingsBtn{order:6}
+  header .iconbtn{min-width:36px;width:36px;height:36px;padding:0;}
   .lms-wrap{padding:0;}
   .lms-head{width:100%;gap:8px;}
   .lms-role{flex:0 0 auto;}
