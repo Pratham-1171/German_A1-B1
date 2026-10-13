@@ -229,8 +229,9 @@
 
   /* ---------------- admin sign-in with an emailed one-time code ---------------- */
   async function sendCode(email) {
-    try { await http('/auth/v1/otp', {method: 'POST', body: {email: String(email).trim(), create_user: false}}); }
-    catch (e) { if (e.offline || e.status === 429) throw e; /* unknown address etc.: stay silent so nobody can probe which emails exist */ }
+    // Keep Supabase's non-enumerating behavior, but do not hide SMTP/provider
+    // failures. Auth's Magic Link template must contain {{ .Token }} for a code.
+    await http('/auth/v1/otp', {method: 'POST', body: {email: String(email).trim(), create_user: false}});
   }
   async function verifyCode(email, code) {
     const r = await http('/auth/v1/verify', {method: 'POST', body: {type: 'email', email: String(email).trim(), token: String(code).replace(/\s+/g, '')}});
@@ -265,12 +266,26 @@
       box.querySelectorAll('[data-who]').forEach(b => b.onclick = () => { who = b.dataset.who; method = who === 'admin' ? 'code' : 'password'; codeSent = false; if (who === 'admin') mode = 'in'; msg = ''; draw(); });
       const sw = box.querySelector('#spSwitch'); if (sw) sw.onclick = e => { e.preventDefault(); mode = mode === 'up' ? 'in' : 'up'; msg = ''; draw(); };
       const mt = box.querySelector('#spMethod'); if (mt) mt.onclick = e => { e.preventDefault(); method = method === 'code' ? 'password' : 'code'; codeSent = false; msg = ''; draw(); };
-      const rs = box.querySelector('#spResend'); if (rs) rs.onclick = e => { e.preventDefault(); codeSent = false; msg = ''; draw(); };
+      const rs = box.querySelector('#spResend');
+      if (rs) rs.onclick = e => {
+        e.preventDefault();
+        const waitMs = resendAt - Date.now();
+        if (waitMs > 0) { setErr('Wait ' + Math.ceil(waitMs / 1000) + ' seconds before requesting another code.'); return; }
+        codeSent = false; msg = ''; draw();
+      };
       const fg = box.querySelector('#spForgot');
       if (fg) fg.onclick = async e => {
         e.preventDefault(); const em = box.querySelector('#spEmail').value.trim();
         if (!em) { setErr('Enter your email first.'); return; }
-        try { await http('/auth/v1/recover', {method: 'POST', body: {email: em}}); setErr('If the address is registered, a reset email has been sent.', true); } catch (er) { setErr(er.offline ? 'No internet connection.' : 'Could not send the email.'); }
+        const resetRedirect = 'https://pratham-1171.github.io/German_A1-B1/';
+        try {
+          await http('/auth/v1/recover?redirect_to=' + encodeURIComponent(resetRedirect), {method: 'POST', body: {email: em}});
+          setErr('If the address is registered, a reset email has been sent. Open the newest email in your browser. The link expires and can only be used once.', true);
+        } catch (er) {
+          setErr(er.offline ? 'No internet connection.' : er.status === 429
+            ? 'Too many reset requests. Wait a minute before trying again.'
+            : 'Could not send the email. Check Supabase Auth email settings and try again.');
+        }
       };
       box.querySelector('#spForm').onsubmit = submit;
     };
@@ -286,9 +301,17 @@
         btn.disabled = true;
         if (!codeSent) {
           try {
-            await sendCode(email); const keep = email; codeSent = true; msg = ''; draw();
-            box.querySelector('#spEmail').value = keep; setErr('If this address belongs to an administrator, a code was sent. Enter it below (check spam too).', true);
-          } catch (e) { setErr(e.offline ? 'No internet connection.' : 'Please wait a minute before asking for another code.'); btn.disabled = false; }
+            await sendCode(email);
+            const keep = email;
+            codeSent = true; resendAt = Date.now() + 30000; msg = ''; draw();
+            box.querySelector('#spEmail').value = keep;
+            setErr('Request accepted. Check inbox and spam. For a numeric code, Supabase → Authentication → Email Templates → Magic Link must contain {{ .Token }}.', true);
+          } catch (e) {
+            setErr(e.offline ? 'No internet connection.'
+              : e.status === 429 ? 'Supabase is limiting email requests. Wait at least 30–60 seconds before retrying.'
+              : 'Could not send the login email. Check Supabase Auth email settings and try again.');
+            btn.disabled = false;
+          }
           return;
         }
         const code = box.querySelector('#spCode').value.replace(/\s+/g, '');
