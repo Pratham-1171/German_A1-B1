@@ -7,6 +7,8 @@
     "allowMixedContent": false
   },
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "url": "https://pratham-1171.github.io/German_A1-B1/",
+    "cleartext": false
   }
 }
