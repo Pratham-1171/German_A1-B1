@@ -102,10 +102,14 @@ $('#langBtn').onclick = e => { e.preventDefault(); e.stopPropagation(); S.settin
 $('#settingsBtn').onclick = e => {
   e.preventDefault();
   e.stopPropagation();
+  /* Staff dashboards use their own hash routes. Do NOT change the hash here:
+     another LMS/auth route refresh can immediately overwrite #/settings. Render
+     the settings view directly and leave the staff dashboard route untouched. */
+  if (window.SP_LMS && window.SP_LMS.isStaff && window.SP_LMS.isStaff()) {
+    if (typeof viewSettings === 'function') viewSettings($('#view'));
+    return false;
+  }
   location.hash = '#/settings';
-  /* Render immediately as well as through hashchange. This prevents a staff
-     dashboard/auth refresh from briefly replacing the settings view. */
-  if (typeof route === 'function') route();
 };
 
 buildNav();
