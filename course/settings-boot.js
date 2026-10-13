@@ -97,9 +97,16 @@ function applyLanguage(renderView){
   if(renderView) route();
 }
 
-$('#themeBtn').onclick = () => { S.settings.theme = (S.settings.theme === 'dark') ? 'light' : 'dark'; STORE.save(); applyTheme(); };
-$('#langBtn').onclick = () => { S.settings.lang = (S.settings.lang === 'gu') ? 'en' : 'gu'; STORE.save(); applyLanguage(true); };
-$('#settingsBtn').onclick = () => { location.hash = '#/settings'; };
+$('#themeBtn').onclick = e => { e.preventDefault(); e.stopPropagation(); S.settings.theme = (S.settings.theme === 'dark') ? 'light' : 'dark'; STORE.save(); applyTheme(); };
+$('#langBtn').onclick = e => { e.preventDefault(); e.stopPropagation(); S.settings.lang = (S.settings.lang === 'gu') ? 'en' : 'gu'; STORE.save(); applyLanguage(true); };
+$('#settingsBtn').onclick = e => {
+  e.preventDefault();
+  e.stopPropagation();
+  location.hash = '#/settings';
+  /* Render immediately as well as through hashchange. This prevents a staff
+     dashboard/auth refresh from briefly replacing the settings view. */
+  if (typeof route === 'function') route();
+};
 
 buildNav();
 applyTheme();
