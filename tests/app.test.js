@@ -64,9 +64,9 @@ test('sentence builder accepts every valid word order and ignores capitalisation
 test('production course renders with the teal-indigo palette and styled cards', async () => {
   const html = build({ALLOW_LOCAL_MODE: '1'});
   const source = require('node:fs').readFileSync(html, 'utf8');
-  assert.match(source, /--accent:\\s*#0f766e/i);
-  assert.match(source, /--accent2:\\s*#4f46e5/i);
-  assert.match(source, /--surface-2:\\s*#f7f9fd/i);
-  assert.match(source, /theme-color[^>]*#0f766e/i);
-  assert.match(source, /\\.card\\s*\\{[^}]*border:\\s*1px solid var\\(--line\\)/s);
+  assert.ok(source.includes('--accent:#0f766e'), 'teal accent should be present');
+  assert.ok(source.includes('--accent2:#4f46e5'), 'indigo accent should be present');
+  assert.ok(source.includes('--surface-2:#f7f9fd'), 'surface palette should be present');
+  assert.ok(source.includes('theme-color" content="#0f766e"'), 'installed app theme colour should match');
+  assert.ok(source.includes('.card{min-width:0;background:var(--card);color:var(--text);border:1px solid var(--line)'), 'cards should retain visible surfaces');
 });
