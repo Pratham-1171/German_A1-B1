@@ -229,9 +229,15 @@
 
   /* ---------------- admin sign-in with an emailed one-time code ---------------- */
   async function sendCode(email) {
-    // Keep Supabase's non-enumerating behavior, but do not hide SMTP/provider
-    // failures. Auth's Magic Link template must contain {{ .Token }} for a code.
-    await http('/auth/v1/otp', {method: 'POST', body: {email: String(email).trim(), create_user: false}});
+    // Keep Supabase's non-enumerating behavior for unknown email addresses.
+    // Surface rate limits, connectivity errors, and server/provider failures.
+    try {
+      await http('/auth/v1/otp', {method: 'POST', body: {email: String(email).trim(), create_user: false}});
+    } catch (e) {
+      if (e.offline || e.status === 429 || e.status >= 500) throw e;
+      // For other client errors, keep the same UI response to avoid exposing
+      // whether an email address is registered.
+    }
   }
   async function verifyCode(email, code) {
     const r = await http('/auth/v1/verify', {method: 'POST', body: {type: 'email', email: String(email).trim(), token: String(code).replace(/\s+/g, '')}});
