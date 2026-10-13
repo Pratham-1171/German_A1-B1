@@ -18,6 +18,7 @@ app_module_files = [
     'vocabulary-data.js',
     'word-reference-data.js',
     'grammar-reference-data.js',
+    'grammar-expansion.js',
     'phrase-reference-data.js',
     'achievement-data.js',
     'core-engine.js',
