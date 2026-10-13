@@ -232,7 +232,7 @@
     // Keep Supabase's non-enumerating behavior for unknown email addresses.
     // Surface rate limits, connectivity errors, and server/provider failures.
     try {
-      await http('/auth/v1/otp', {method: 'POST', body: {email: String(email).trim(), create_user: false}});
+      await http('/auth/v1/otp?redirect_to=' + encodeURIComponent('https://pratham-1171.github.io/German_A1-B1/'), {method: 'POST', body: {email: String(email).trim(), create_user: false}});
     } catch (e) {
       if (e.offline || e.status === 429 || e.status >= 500) throw e;
       // For other client errors, keep the same UI response to avoid exposing
@@ -532,8 +532,39 @@
   }
   function stopServices() { clearInterval(timer); clearTimeout(syncTimer); const c = document.getElementById('spChip'); if (c) c.textContent = ''; const a = document.getElementById('spAcct'); if (a) a.remove(); if (c) c.remove(); }
 
+  function pendingEmailLink() {
+    const p = new URLSearchParams(String(location.hash || '').replace(/^#/, ''));
+    const type = p.get('type') || '';
+    if (!['magiclink', 'email', 'signup'].includes(type)) return null;
+    const access_token = p.get('access_token'), refresh_token = p.get('refresh_token');
+    if (!access_token || !refresh_token) return null;
+    return {access_token, refresh_token, expires_in: Number(p.get('expires_in')) || 3600};
+  }
+  async function consumeEmailLink(link) {
+    try {
+      // Get the authoritative user from Auth before creating a local session.
+      const r = await http('/auth/v1/user', {token: link.access_token});
+      try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+      auth = null;
+      setSession({access_token: link.access_token, refresh_token: link.refresh_token,
+        expires_in: link.expires_in, user: r.data});
+      await loadProfile();
+      sync = {uid: auth.user.id};
+      touchClock(true); ls.set(K_SYNC, sync);
+      await finishLogin(auth.profile);
+    } catch (e) {
+      auth = null; ls.del(K_AUTH);
+      showLogin(e.offline ? 'No internet connection. Open the email link again when online.' :
+        'That email link expired or was already used. Request a new email and open the newest link.');
+    }
+  }
+
   window.SP_AUTH = Object.assign(window.SP_AUTH, {syncNow, lockState, signOut, buildSnapshot, isAdmin, isStudent, _state: () => ({auth, sync})});
   css();
-  if (!auth || !auth.refresh_token) { showLogin(); }
+  const emailLink = pendingEmailLink();
+  if (emailLink) {
+    showLogin('Verifying your email sign-in link…');
+    consumeEmailLink(emailLink);
+  } else if (!auth || !auth.refresh_token) { showLogin(); }
   else { adoptUser(auth.user.id); startServices(); }
 })();
