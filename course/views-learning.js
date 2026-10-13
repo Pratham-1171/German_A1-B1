@@ -659,22 +659,52 @@ function viewGrammar(el){
 }
 function grammarCardHTML(level, idx, it){
   const key = level + '_' + idx;
+  const guide = (typeof GRAMMAR_GUIDE !== 'undefined' && GRAMMAR_GUIDE[level + '|' + it.title]) || null;
   const done = S.grammarDone[key] ? `<span class="tag" style="background:rgba(22,163,74,.15);color:var(--ok);margin-left:8px">DONE</span>` : '';
-  return `<div class="card">
-    <div style="font-weight:750;font-size:16px">${esc(it.title)}${done}</div>
-    <div style="font-size:13.5px;line-height:1.65;margin:8px 0">${esc(it.explanation)}</div>
-    <div style="background:linear-gradient(135deg,rgba(30,111,235,.08),rgba(13,148,136,.08));border-left:4px solid var(--accent);border-radius:8px;padding:12px 14px;font-family:ui-monospace,Menlo,monospace;font-size:13.5px;line-height:1.7;white-space:pre-wrap;margin:10px 0;overflow-x:auto">${esc(it.rule)}</div>
-    <div style="font-size:11.5px;font-weight:800;color:var(--muted);margin-top:12px">EXAMPLES</div>
-    <div style="display:flex;flex-direction:column;gap:6px;margin:10px 0">${it.examples.map(([de,en]) => `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:9px 12px;background:var(--bg);border-radius:8px;font-size:13.5px;align-items:center"><div style="font-weight:600;display:flex;align-items:center;gap:6px">${esc(de)}${speakerBtn(de, 11)}</div><div class="mini-muted" style="font-size:12.5px">${esc(en)}</div></div>`).join('')}</div>
-    <div style="font-size:11.5px;font-weight:800;color:var(--warn);margin-top:12px">COMMON MISTAKES</div>
-    <div style="display:flex;flex-direction:column;gap:6px;margin:10px 0">${it.mistakes.map(([bad,good]) => `<div style="display:grid;grid-template-columns:auto 1fr;gap:10px;padding:9px 12px;background:rgba(225,29,72,.06);border-radius:8px;font-size:13px;align-items:center"><div style="color:var(--warn);font-weight:600">${esc(bad)}</div><div style="color:var(--ok);font-weight:600">${esc(good)}</div></div>`).join('')}</div>
-    <div class="g-exercise" data-correct="${it.exercise.correct}" data-key="${esc(key)}" data-why="${esc(it.exercise.why)}" style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:12px 0">
-      <div style="font-weight:650;font-size:14px;margin-bottom:10px">✏️ ${esc(it.exercise.q)}</div>
-      ${it.exercise.options.map((o,i) => `<button class="opt" data-i="${i}">${esc(o)}</button>`).join('')}
-      <div class="fb" style="margin-top:10px;font-size:13px;padding:8px 10px;border-radius:7px"></div>
+  const note = (label, text) => text ? `<div class="grammar-note"><b>` + esc(label) + `</b><div>` + esc(text) + `</div></div>` : '';
+  const steps = guide && Array.isArray(guide.steps) && guide.steps.length
+    ? `<div class="grammar-note"><b>Build it step by step</b><ol>` + guide.steps.map(s => `<li>` + esc(s) + `</li>`).join('') + `</ol></div>` : '';
+  const extraExamples = guide && Array.isArray(guide.extraExamples) && guide.extraExamples.length
+    ? `<div class="grammar-note"><b>More examples</b>` + guide.extraExamples.map(([de,en]) => `<div class="grammar-example"><span>` + esc(de) + `</span><span>` + esc(en) + `</span></div>`).join('') + `</div>` : '';
+  return `<div class="card grammar-card">
+    <div style="font-weight:750;font-size:16px">` + esc(it.title) + done + `</div>
+    <div class="grammar-explanation">` + esc(it.explanation) + `</div>
+    ` + note('When to use it', guide && guide.when) + steps + `
+    <div class="grammar-rule-label">RULE / SENTENCE PATTERN</div>
+    <div class="grammar-rule">` + esc(it.rule) + `</div>
+    ` + note('Remember', guide && guide.tip) + note('Important contrast', guide && guide.contrast) + extraExamples + `
+    <div class="grammar-rule-label">EXAMPLES</div>
+    <div class="grammar-examples">` + it.examples.map(([de,en]) => `<div class="grammar-example"><span class="grammar-de">` + esc(de) + speakerBtn(de, 11) + `</span><span class="grammar-en">` + esc(en) + `</span></div>`).join('') + `</div>
+    <div class="grammar-mistake-label">COMMON MISTAKES</div>
+    <div class="grammar-mistakes">` + it.mistakes.map(([bad,good]) => `<div class="grammar-mistake"><span>` + esc(bad) + `</span><span>` + esc(good) + `</span></div>`).join('') + `</div>
+    <div class="g-exercise grammar-exercise" data-correct="` + it.exercise.correct + `" data-key="` + esc(key) + `" data-why="` + esc(it.exercise.why) + `">
+      <div class="grammar-question">✏️ ` + esc(it.exercise.q) + `</div>
+      ` + it.exercise.options.map((o,i) => `<button class="opt" data-i="` + i + `">` + esc(o) + `</button>`).join('') + `
+      <div class="fb grammar-feedback"></div>
     </div>
   </div>`;
 }
+
+
+/* Expanded grammar lesson cards: readable on mobile and desktop. */
+.grammar-card .grammar-explanation{font-size:14px;line-height:1.75;margin:9px 0 12px;max-width:78ch}
+.grammar-card .grammar-rule-label,.grammar-card .grammar-mistake-label{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.04em;margin:14px 0 6px}
+.grammar-card .grammar-rule{background:linear-gradient(135deg,rgba(30,111,235,.08),rgba(13,148,136,.08));border-left:4px solid var(--accent);border-radius:8px;padding:12px 14px;font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.75;white-space:pre-wrap;margin:8px 0 12px;overflow-x:auto}
+.grammar-card .grammar-note{padding:10px 12px;border:1px solid var(--line);background:var(--bg);border-radius:9px;margin:9px 0;font-size:13px;line-height:1.65;overflow-wrap:anywhere}
+.grammar-card .grammar-note>b{display:block;margin-bottom:3px;color:var(--accent)}
+.grammar-card .grammar-note ol{padding-left:20px;margin:4px 0}
+.grammar-card .grammar-examples,.grammar-card .grammar-mistakes{display:flex;flex-direction:column;gap:6px;margin:8px 0 12px}
+.grammar-card .grammar-example{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;padding:9px 11px;background:var(--bg);border-radius:8px;font-size:13px;align-items:center;min-width:0}
+.grammar-card .grammar-de{font-weight:650;display:flex;align-items:center;gap:6px;min-width:0;overflow-wrap:anywhere}
+.grammar-card .grammar-en{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.grammar-card .grammar-mistake-label{color:var(--warn)}
+.grammar-card .grammar-mistake{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;padding:9px 11px;background:rgba(225,29,72,.06);border-radius:8px;font-size:12.5px;align-items:start;overflow-wrap:anywhere}
+.grammar-card .grammar-mistake span:first-child{color:var(--warn)}
+.grammar-card .grammar-mistake span:last-child{color:var(--ok);font-weight:650}
+.grammar-card .grammar-exercise{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;margin:12px 0 0}
+.grammar-card .grammar-question{font-weight:650;font-size:14px;margin-bottom:10px}
+.grammar-card .grammar-feedback{margin-top:10px;font-size:13px;padding:8px 10px;border-radius:7px}
+@media(max-width:520px){.grammar-card .grammar-example,.grammar-card .grammar-mistake{grid-template-columns:1fr;gap:4px}.grammar-card .grammar-rule{font-size:12px;padding:10px}}
 
 /* ============================================================
    LISTENING — INFINITE
