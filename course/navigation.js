@@ -17,9 +17,10 @@ function setActiveNav(route){
 function route(){
   const raw = (location.hash || '#/home').replace(/^#\//,'');
   const r = raw.split('?')[0] || 'home';
-  /* Staff dashboards intentionally restrict course routes, but Settings remains
-     available to admin/teacher accounts through the header settings button. */
-  if (window.SP_LMS && r !== 'settings' && !window.SP_LMS.canVisit(r)) {
+  /* Staff dashboards restrict learning routes. Account and Settings are shared;
+     Admin is reserved for approved administrators. */
+  const staffAllowed = r === 'account' || r === 'settings' || (r === 'admin' && window.SP_LMS && window.SP_LMS.isAdmin && window.SP_LMS.isAdmin());
+  if (window.SP_LMS && !staffAllowed && !window.SP_LMS.canVisit(r)) {
     if (location.hash !== '#/assignments') location.hash = '#/assignments';
     return;
   }
@@ -42,7 +43,8 @@ window.addEventListener('hashchange', route);
 
 /* ============================================================
    SETUP PANEL
-   ============================================================ */
+   ============================================================
+   */
 function setupPanelHTML(idPrefix, defaultCount, defaultDiff){
   const cnt = defaultCount || S.settings.defaultCount || 10;
   const diff = defaultDiff || S.settings.defaultDifficulty || 'mixed';
