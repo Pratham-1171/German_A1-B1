@@ -18,6 +18,7 @@ function createServer(opts) {
     S.log.push(method + ' ' + p);
     if (p === '/auth/v1/token' && q.get('grant_type') === 'password') {
       const usr = S.users.get(String(body.email).toLowerCase()) || S.users.get(body.email);
+      if (usr && usr.password === body.password && usr.unconfirmed) return R(400, {error_code: 'email_not_confirmed', msg: 'Email not confirmed'});
       return usr && usr.password === body.password ? R(200, session(usr)) : R(400, {error_description: 'Invalid login credentials', error_code: 'invalid_credentials'});
     }
     if (p === '/auth/v1/token' && q.get('grant_type') === 'refresh_token') { const id = S.refresh.get(body.refresh_token); return id ? R(200, session(byId(id))) : R(400, {error_description: 'Invalid Refresh Token'}); }
@@ -25,6 +26,16 @@ function createServer(opts) {
       if (S.users.has(body.email)) return R(422, {msg: 'User already registered'});
       const usr = S.addUser(body.email, body.password, {name: body.data && body.data.full_name});     // role/approved can never come from the request
       return S.autoConfirm ? R(200, session(usr)) : R(200, {id: usr.id, email: usr.email});
+    }
+    if (p === '/auth/v1/otp') {
+      const usr = S.users.get(body.email);
+      if (!usr) return R(422, {error_code: 'otp_disabled', msg: 'Signups not allowed for otp'});
+      S.otps = S.otps || {}; S.otps[body.email] = '482913'; S.otpSent = (S.otpSent || 0) + 1; return R(200, {});
+    }
+    if (p === '/auth/v1/verify') {
+      const usr = S.users.get(body.email);
+      if (body.type !== 'email' || !usr || !S.otps || S.otps[body.email] !== body.token) return R(403, {error_code: 'otp_expired', msg: 'Token has expired or is invalid'});
+      delete S.otps[body.email]; return R(200, session(usr));
     }
     if (p === '/auth/v1/logout') { S.tokens.delete((headers.Authorization || '').replace('Bearer ', '')); return R(204, null); }
     if (p === '/auth/v1/recover') return R(200, {});
