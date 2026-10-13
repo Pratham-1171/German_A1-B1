@@ -33,7 +33,6 @@ replace("sessionState.results.push({correct:true}); sessionState.idx++;", "recor
 replace("setTimeout(() => { sessionState.idx++; renderSessionCard($('#view')); }, 900);", "const nextButton = document.createElement('button'); nextButton.className='btn small'; nextButton.textContent='Next →'; nextButton.onclick=()=>{ sessionState.idx++; renderSessionCard($('#view')); }; body.appendChild(nextButton);")
 replace("setTimeout(() => { quizState.idx++; quizState.answered = false; renderQuiz(); }, 1100);", "const nextButton = document.createElement('button'); nextButton.className='btn small'; nextButton.textContent='Next →'; nextButton.onclick=()=>{ quizState.idx++; quizState.answered=false; renderQuiz(); }; $('#feedback').appendChild(nextButton);")
 replace("function renderSessionExercise(body, ex, w){", "function renderSessionExercise(body, ex, w){ delete body.dataset.done;")
-replace("if(ok){ S.sentencesBuilt =", "if(ok && !$('#sbCheck').dataset.counted){ $('#sbCheck').dataset.counted='1'; S.sentencesBuilt =")
 replace("if(p.store) localStorage.setItem(STORE.key, JSON.stringify(p.store)); alert(", "if(p.store){ localStorage.setItem(STORE.key, JSON.stringify(p.store)); markSystemEvent('import'); } alert(")
 replace("localStorage.removeItem(STORE.key); location.reload();", "localStorage.removeItem(STORE.key); markSystemEvent('reset'); location.reload();")
 
@@ -60,7 +59,7 @@ cfg_file = root / 'course/config.local.json'
 if (not url or not key) and cfg_file.exists():
     c = json.loads(cfg_file.read_text()); url = url or c.get('url', ''); key = key or c.get('key', '')
 if url or key:
-    if not re.fullmatch(r'https://[a-z0-9-]+\.supabase\.(co|in)', url):
+    if not re.fullmatch(r'https://[a-z0-9-]+\\.supabase\\.(co|in)', url):
         raise SystemExit('SUPABASE_URL must look like https://<project>.supabase.co')
     if len(key) < 30 or 'service_role' in key.lower():
         raise SystemExit('SUPABASE_ANON_KEY missing or invalid. NEVER put the service_role key in the app.')
@@ -82,7 +81,7 @@ else:
 
 # ---- bundle ----
 parts = [(root / 'course' / f).read_text(encoding='utf-8') for f in
-         ['enhancements.js', 'content-expansion.js', 'german-core.js', 'exercises-v8.js', 'reading-writing-v8.js', 'engine-v8.js', 'auth-sync.js']]
+         ['enhancements.js', 'content-expansion.js', 'german-core.js', 'exercises-v8.js', 'reading-writing-v8.js', 'engine-v8.js', 'password-recovery.js', 'auth-sync.js']]
 theme = (root / 'course/theme.css').read_text(encoding='utf-8')
 shim = (root / 'course/native-shim.js').read_text(encoding='utf-8')
 cfg_js = 'window.SP_CONFIG=' + json.dumps(config) + ';\n'
@@ -97,7 +96,7 @@ out.mkdir(parents=True, exist_ok=True)
 # service-worker cache name changes with every build so updates reach installed apps
 build_id = hashlib.sha1(src.encode('utf-8')).hexdigest()[:10]
 sw = (root / 'web-assets/sw.js').read_text().replace('__BUILD__', build_id)
-(out / 'sw.js').write_text(sw)
+(out / 'sw.js').write_text(sw, encoding='utf-8')
 for f in ['manifest.webmanifest']:
     (out / f).write_text((root / 'web-assets' / f).read_text())
 (out / 'icons').mkdir(exist_ok=True)
