@@ -14,7 +14,7 @@ function viewGrammar(el){
         <button class="btn ${activeLevel==='B1'?'':'ghost'}" data-lvl="B1">B1</button>
         <button class="btn small good" id="grammarPractice">⚡ Practice ∞</button>
       </div></div>
-      ${sections.map(sec => `<h3>${esc(sec.level)} · ${esc(sec.title)}</h3>${sec.items.map((it,idx) => grammarCardHTML(sec.level, idx, it)).join('')}`).join('')}`;
+      ${sections.map(sec => { const offset = GRAMMAR_DATA.slice(0, GRAMMAR_DATA.indexOf(sec)).filter(g => g.level === sec.level).reduce((sum, g) => sum + g.items.length, 0); return `<h3>${esc(sec.level)} · ${esc(sec.title)}</h3>${sec.items.map((it,idx) => grammarCardHTML(sec.level, offset + idx, it)).join('')}`; }).join('')}`;
     el.querySelectorAll('[data-lvl]').forEach(b => b.onclick = () => { activeLevel = b.dataset.lvl; render(); });
     el.querySelectorAll('.g-exercise').forEach(ex => {
       const correct = +ex.dataset.correct;
