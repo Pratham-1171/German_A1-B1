@@ -14,9 +14,23 @@ function setActiveNav(route){
   const a = $('#nav button.active');
   if(a && a.scrollIntoView) a.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
 }
+function currentStaffRole(){
+  const state = window.SP_AUTH && typeof window.SP_AUTH._state === 'function' ? window.SP_AUTH._state() : null;
+  const profile = state && state.auth && state.auth.profile;
+  return profile && (profile.role === 'admin' || profile.role === 'teacher') ? profile.role : '';
+}
+const STAFF_ALLOWED_ROUTES = {
+  admin: new Set(['admin','classroom','assignments','announcements','audit','teachers']),
+  teacher: new Set(['classroom','assignments','announcements'])
+};
 function route(){
   const raw = (location.hash || '#/home').replace(/^#\//,'');
   const r = raw.split('?')[0] || 'home';
+  const role = currentStaffRole();
+  if (role && !STAFF_ALLOWED_ROUTES[role].has(r)) {
+    if (location.hash !== '#/assignments') location.hash = '#/assignments';
+    return;
+  }
   if (window.SP_LMS && !window.SP_LMS.canVisit(r)) {
     if (location.hash !== '#/assignments') location.hash = '#/assignments';
     return;
