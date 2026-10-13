@@ -9,7 +9,7 @@ out = root / "www" / "index.html"
 lms = (root / "course" / "lms-ui.js").read_text(encoding="utf-8")
 src = out.read_text(encoding="utf-8")
 old = "connectors:viewConnectors, collocations:viewCollocations, compare:viewCompare"
-new = old + ", classroom:(window.viewClassroom||viewHome), assignments:(window.viewAssignments||viewHome), announcements:(window.viewAnnouncements||viewHome), audit:(window.viewAudit||viewHome)"
+new = old + ", classroom:(window.viewClassroom||viewHome), students:(window.viewStudents||viewHome), assignments:(window.viewAssignments||viewHome), announcements:(window.viewAnnouncements||viewHome), notifications:(window.viewNotifications||viewHome), audit:(window.viewAudit||viewHome), teachers:(window.viewTeachers||viewHome)"
 if old not in src:
     raise SystemExit("Could not locate the course route registry")
 src = src.replace(old, new, 1)
@@ -18,4 +18,4 @@ if marker not in src:
     raise SystemExit("Could not locate </body>")
 src = src.replace(marker, "<script>" + lms + "</script>" + marker, 1)
 out.write_text(src, encoding="utf-8")
-print("Injected mobile LMS UI into www/index.html")
+print("Injected LMS staff dashboards, notifications and theme into www/index.html")
