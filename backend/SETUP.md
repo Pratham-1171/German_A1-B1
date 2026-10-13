@@ -1,69 +1,173 @@
-# Backend setup (about 15 minutes, free tier is enough)
+# Sprachtreppe backend + LMS setup
 
-> **Already done for you:** the project `sprachtreppe` (ap-south-1) was created and `schema.sql` applied through the Supabase connector.
-> Project URL: `https://biqkgnkiuibckbhfsbrs.supabase.co`. Continue at step 2 (admin account) and step 4 (GitHub secrets).
+Supabase hosts authentication, PostgreSQL, RLS and server-side functions. GitHub hosts source/CI. The Android app contains only the public Supabase URL + anon/publishable key; never ship a service-role key.
 
-The app needs a small server for **accounts**, **weekly updates**, and LMS data. It uses Supabase (hosted PostgreSQL + login).
-Nothing secret is ever placed inside the app.
+## 1. Apply the database schema
 
-## 1. Create the project
-1. Sign up at https://supabase.com → **New project** (any name, strong database password you will not need again, region near your students).
-2. Open **SQL Editor → New query**, paste the whole of `backend/schema.sql`, press **Run**. It should finish with "Success".
+In **Supabase → SQL Editor**, run `backend/schema.sql` first.
 
-### 1b. Apply LMS migrations
-After `schema.sql`, run these files in order in **SQL Editor**:
-1. `backend/migrations/001_lms_phase1.sql` — teacher role, classes, class memberships and invite codes.
+Then run these migrations in this exact order:
+
+1. `backend/migrations/001_lms_phase1.sql` — teacher role, classes, class teachers, members and invitation codes.
 2. `backend/migrations/002_lms_phase2.sql` — announcements and in-app notifications.
+3. `backend/migrations/003_lms_phase3.sql` — assignments, student submissions, grading and feedback.
+4. `backend/migrations/004_lms_phase4_5_6.sql` — study sessions, attendance/activity analytics, audit log, email queue, roster controls, dashboards, retention cleanup and automatic assignment/grade notifications.
+5. `backend/migrations/005_lms_scheduled_jobs.sql` — reminder/report queueing functions.
 
-Do not run the migration files before `schema.sql`. If you already ran Phase 1, run only Phase 2 now.
+**Do not run the files out of order.** They are additive and preserve the existing progress/submission system.
 
-The migrations are additive and preserve the existing student progress/submission system.
+### Required extension
 
-## 2. Create YOUR admin account (the password never goes into the app or GitHub)
-1. **Authentication → Users → Add user → Create new user**: your email + a long passphrase (use a password manager). Tick **Auto Confirm User**.
-2. **SQL Editor** → run (with your email):
-   ```sql
-   update public.profiles set role = 'admin', approved = true where email = 'you@example.com';
-   ```
-   This is the only way to create an admin. Students cannot do it, not even by modifying the app.
+Phase 1 uses `extensions.digest()` for hashed class invitation codes. If the migration reports that `digest` does not exist, open **Database → Extensions**, enable **pgcrypto**, then rerun Phase 1.
 
-## 2b. Passwordless admin sign-in (emailed code) — one-time template change
-The Admin tab signs in with a 6-digit code sent to the admin's email (no password to remember or leak). Supabase's default email
-contains only a link, so add the code to it:
-1. **Authentication → Emails → Templates → Magic Link** (older dashboards: Authentication → Email Templates).
-2. Replace the body with, for example:
-   ```html
-   <h2>Sprachtreppe admin sign-in</h2>
-   <p>Your code: <b>{{ .Token }}</b></p>
-   <p>It expires soon and works once. If you did not ask for it, ignore this email.</p>
-   ```
-3. Save. Supabase's built-in sender delivers to your own (project owner / team member) email, which is all the admin needs.
-   Limits: about 2 emails per hour on the built-in sender, one code per minute per address.
-In the app: **Admin tab → type your email → Send me a code → enter the code**. "Use password instead" stays available.
-Only an account whose role is `admin` gets in; students who try the Admin tab are refused.
+## 2. Create/promote the administrator
 
-## 3. Recommended Authentication settings (Authentication → Sign In / Providers, and Settings)
-* **Email**: leave enabled. **Minimum password length: 10**. For a classroom you may switch **Confirm email** off so students can start at once —
-  they still cannot send anything until you approve them.
-* When all your students have registered: switch **Allow new users to sign up** off (or keep it on and just ignore unapproved accounts).
-* Optional: turn on CAPTCHA protection (Authentication → Bot and Abuse Protection) if your app link is public.
+Create your account in **Authentication → Users → Add user** and auto-confirm it if desired.
 
-## 4. Copy two values into GitHub
-Supabase → **Project Settings → API**:
-* **Project URL**  → GitHub secret `SUPABASE_URL`
-* **anon / publishable key** → GitHub secret `SUPABASE_ANON_KEY`  (this is the *public* key. **Never** use the `service_role` key — the build refuses it.)
+Then run this in SQL Editor, replacing the email:
 
-GitHub → your repository → **Settings → Secrets and variables → Actions → New repository secret** (create both).
+```sql
+update public.profiles
+set role = 'admin', approved = true
+where email = 'you@example.com';
+```
 
-## 5. Build
-GitHub → **Actions → Build Android APK → Run workflow**. Download the APK artifact, install it, sign in as admin, tap **🛡️ Admin**.
+Never put the admin password in the APK, GitHub repository, JavaScript, or SQL source files.
 
-## Day-to-day
-* New students register inside the app → they appear under **Admin → Approvals** → open → **Approve account**.
-* Every student's progress arrives in **Admin → To review** (accuracy, weak skills, frequent mistakes, writing samples). Add feedback and press **Mark reviewed**; the student sees it after the next sync.
-* **Admin/Teacher → Classes** can create classes, add teachers and generate invitation codes after Phase 1 is applied.
-* **Teacher/Admin → Announcements** can publish class-specific or global announcements after Phase 2 is applied.
-* Students receive announcements in the in-app notification center and can mark notifications read.
-* **Admin → Overdue** lists approved students who have not synced for 7 days (server-side time, cannot be faked on the phone).
-* Forgot password: students use "Forgot password?" on the login screen (Supabase sends the email).
-* Removing a student: Authentication → Users → delete (their data is deleted with them).
+## 3. Authentication settings
+
+Recommended:
+
+- Email provider: enabled.
+- Minimum password length: 10+.
+- Confirm email: optional for classroom use; approval still controls database access.
+- Disable public signups after all students have registered if the app is private.
+- CAPTCHA: recommended if the registration endpoint is public.
+
+## 4. GitHub secrets
+
+In **GitHub → Settings → Secrets and variables → Actions**, add:
+
+- `SUPABASE_URL` = your Supabase project URL.
+- `SUPABASE_ANON_KEY` = Supabase anon/publishable key.
+
+Never use `service_role` as the app key.
+
+## 5. Scheduled maintenance and email reminders
+
+The database now creates an `email_queue`. **The database does not send email itself.** A server-side email worker/Edge Function should read pending rows and send them through your chosen provider (for example, Resend, Postmark or another transactional provider). Keep that provider API key server-side.
+
+The following functions prepare queue entries:
+
+```sql
+select public.queue_assignment_due_reminders();
+select public.queue_inactive_student_reminders();
+select public.queue_weekly_student_reports();
+```
+
+Only an admin can run them.
+
+For automatic scheduling, Supabase projects can use `pg_cron` if enabled. After enabling it, create jobs such as:
+
+```sql
+select cron.schedule(
+  'sprachtreppe-assignment-reminders',
+  '15 * * * *',
+  $$select public.queue_assignment_due_reminders();$$
+);
+
+select cron.schedule(
+  'sprachtreppe-inactive-reminders',
+  '0 9 * * *',
+  $$select public.queue_inactive_student_reminders();$$
+);
+
+select cron.schedule(
+  'sprachtreppe-weekly-reports',
+  '0 9 * * 1',
+  $$select public.queue_weekly_student_reports();$$
+);
+```
+
+For cleanup, `public.run_retention_cleanup()` is protected by admin authorization. If your pg_cron setup runs it directly, use a secure server-side mechanism rather than exposing an admin JWT in the database job. A Supabase Edge Function or trusted server job is preferred for scheduled privileged operations.
+
+## 6. Retention policy implemented
+
+Current cleanup targets are:
+
+- Notifications: 90 days.
+- Study sessions: 1 year.
+- Sent email queue rows: 90 days.
+- Audit log: 2 years.
+
+Assignment/submission records are **not automatically deleted** because they are educational records and may be needed for course history. Review this policy before adding automatic deletion.
+
+## 7. LMS capabilities now in the database
+
+### Admin
+
+- Promote/demote users.
+- Create/manage classes.
+- Add teachers.
+- View class activity.
+- Audit administrative actions.
+- Manage the notification/email infrastructure.
+
+### Teacher
+
+- Create classes.
+- Add co-teachers.
+- Generate/revoke class invitations.
+- Remove students.
+- Publish announcements.
+- Create assignments.
+- Assign course activities.
+- Set points/due dates.
+- Review submissions.
+- Grade and return feedback.
+- View class activity and assignment statistics.
+
+### Student
+
+- Join classes with an invitation code.
+- Leave classes.
+- View announcements.
+- Receive in-app notifications.
+- View assignments and due dates.
+- Submit assignments with idempotent client IDs for offline/retry safety.
+- Receive grades and teacher feedback.
+- Record study sessions for activity analytics.
+
+## 8. Offline-first rule
+
+Course content remains local. Assignment work can be stored locally by the app and submitted later. Every submission/session needs a stable client-generated ID so retrying after reconnect does not create duplicates.
+
+Do not trust the phone for authorization, grades, approval, teacher role or class membership. Those decisions remain server-side through Supabase RLS/functions.
+
+## 9. Build/test
+
+After the database migrations are applied:
+
+1. Build the Android APK through GitHub Actions.
+2. Install/update the APK.
+3. Test student login and approval.
+4. Test teacher promotion.
+5. Create a class.
+6. Generate a class code and join as a student.
+7. Publish an announcement.
+8. Create an assignment.
+9. Submit it as the student.
+10. Grade it as the teacher.
+11. Verify the student receives the grade/feedback notification.
+12. Record a study session and verify teacher dashboard statistics.
+
+## 10. Important security rule
+
+Never expose:
+
+- Supabase `service_role` key.
+- Email provider API keys.
+- Admin passwords.
+- Database passwords.
+
+The anon/publishable key is expected to be present in a client app; RLS and server-side functions are the security boundary.
