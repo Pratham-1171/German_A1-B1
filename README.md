@@ -52,5 +52,17 @@ npm test                                   # ~3 min: grammar engine, screens, lo
 SUPABASE_URL=… SUPABASE_ANON_KEY=… npm run build      # writes www/index.html   (add ALLOW_LOCAL_MODE=1 for no-login)
 npx cap sync android && npx cap open android
 ```
-Source map: `course/german-core.js` (grammar), `exercises-v8.js` (question types), `reading-writing-v8.js`, `engine-v8.js` (app glue),
-`auth-sync.js` (login, weekly lock, admin console), `original.html` (the course), `backend/schema.sql` (database + security rules).
+## Course source layout
+
+The source is split by responsibility, but the build still bundles it into one offline-friendly `www/index.html`.
+**Edit files under `course/`, not the generated `www/index.html`.** Run `python3 scripts/build-course-lms.py` to rebuild the full app.
+
+- `template.html` — page structure and mount points.
+- `base.css` and `theme.css` — layout styling and shared theme overrides.
+- `ui-language.js` — interface text and common translation helpers.
+- `vocabulary-data.js` — vocabulary topics and records.
+- `word-reference-data.js`, `grammar-reference-data.js`, `phrase-reference-data.js`, `achievement-data.js` — learning-reference content grouped by purpose.
+- `core-engine.js` and `exercise-registry.js` — progress state, exercise generation, and exercise routing.
+- `navigation.js`, `views-learning.js`, `views-practice.js`, `settings-boot.js` — navigation, screens, settings, and startup.
+- `german-core.js`, `exercises-v8.js`, `reading-writing-v8.js`, `engine-v8.js`, `auth-sync.js` — shared grammar, question types, app enhancements, and account/sync logic.
+- `backend/schema.sql` — database structure and access rules.

@@ -11,42 +11,61 @@ import hashlib, json, os, re, sys
 from pathlib import Path
 
 root = Path(__file__).resolve().parent.parent
-src = (root / 'course/original.html').read_text(encoding='utf-8')
+src = (root / 'course/template.html').read_text(encoding='utf-8')
+base_css = (root / 'course/base.css').read_text(encoding='utf-8')
+app_module_files = [
+    'ui-language.js',
+    'vocabulary-data.js',
+    'word-reference-data.js',
+    'grammar-reference-data.js',
+    'phrase-reference-data.js',
+    'achievement-data.js',
+    'core-engine.js',
+    'exercise-registry.js',
+    'navigation.js',
+    'views-learning.js',
+    'views-practice.js',
+    'settings-boot.js',
+]
+app_src = '\n'.join((root / 'course' / name).read_text(encoding='utf-8') for name in app_module_files)
 
-def replace(old, new, count=None):
-    global src
-    if old not in src:
-        raise SystemExit('Course source changed, cannot patch: ' + old[:90])
-    src = src.replace(old, new) if count is None else src.replace(old, new, count)
+if src.count('<!-- COURSE_BASE_CSS -->') != 1 or src.count('<!-- COURSE_APP_SCRIPT -->') != 1:
+    raise SystemExit('Course template is missing a required CSS or JavaScript marker.')
+
+def patch_app(old, new, count=None):
+    global app_src
+    if old not in app_src:
+        raise SystemExit('Course source changed, cannot patch app module: ' + old[:90])
+    app_src = app_src.replace(old, new) if count is None else app_src.replace(old, new, count)
 
 # ---- behaviour fixes carried over from the previous build ----
-replace("en: p[3].trim()", "en: p.slice(3).join('|').trim()")
-replace("S.grammarDone[ex.dataset.key] = 1; STORE.save();", "if(ok) S.grammarDone[ex.dataset.key] = 1; recordPracticeActivity('grammar', ok); STORE.save();")
-replace("m.seen++;", "m.seen++; recordPracticeActivity(S.lastView || 'vocabulary', q >= 1);")
-replace("if(w) updateMastery(vocabKey(w), ok ? 2 : 0);", "if(w) updateMastery(vocabKey(w), ok ? 2 : 0); else recordPracticeActivity(ex.skill || 'session', ok);")
-replace("if(q.vocab) updateMastery(vocabKey(q.vocab), ok ? 2 : 0);", "if(q.vocab) updateMastery(vocabKey(q.vocab), ok ? 2 : 0); else recordPracticeActivity(q.skill || 'quiz', ok);")
-replace("S.sessionHistory.filter(s => s.date === new Date().toISOString().slice(0,10)).reduce((a,b) => a + b.questions, 0)", "practiceSnapshot().today")
-replace("new Date().toISOString().slice(0,10)", "localStudyDate()")
-replace("new Date(Date.now() - 86400000).toISOString().slice(0,10)", "localStudyDate(new Date(Date.now() - 86400000))")
-replace("new Date(d.setDate(diff)).toISOString().slice(0,10)", "localStudyDate(new Date(d.setDate(diff)))")
-replace("sessionState.results.push({correct:true}); sessionState.idx++;", "recordPracticeActivity('mistakes', true); sessionState.results.push({correct:true}); sessionState.idx++;")
-replace("setTimeout(() => { sessionState.idx++; renderSessionCard($('#view')); }, 900);", "const nextButton = document.createElement('button'); nextButton.className='btn small'; nextButton.textContent='Next →'; nextButton.onclick=()=>{ sessionState.idx++; renderSessionCard($('#view')); }; body.appendChild(nextButton);")
-replace("setTimeout(() => { quizState.idx++; quizState.answered = false; renderQuiz(); }, 1100);", "const nextButton = document.createElement('button'); nextButton.className='btn small'; nextButton.textContent='Next →'; nextButton.onclick=()=>{ quizState.idx++; quizState.answered=false; renderQuiz(); }; $('#feedback').appendChild(nextButton);")
-replace("function renderSessionExercise(body, ex, w){", "function renderSessionExercise(body, ex, w){ delete body.dataset.done;")
-replace("if(p.store) localStorage.setItem(STORE.key, JSON.stringify(p.store)); alert(", "if(p.store){ localStorage.setItem(STORE.key, JSON.stringify(p.store)); markSystemEvent('import'); } alert(")
-replace("localStorage.removeItem(STORE.key); location.reload();", "localStorage.removeItem(STORE.key); markSystemEvent('reset'); location.reload();")
+patch_app("en: p[3].trim()", "en: p.slice(3).join('|').trim()")
+patch_app("S.grammarDone[ex.dataset.key] = 1; STORE.save();", "if(ok) S.grammarDone[ex.dataset.key] = 1; recordPracticeActivity('grammar', ok); STORE.save();")
+patch_app("m.seen++;", "m.seen++; recordPracticeActivity(S.lastView || 'vocabulary', q >= 1);")
+patch_app("if(w) updateMastery(vocabKey(w), ok ? 2 : 0);", "if(w) updateMastery(vocabKey(w), ok ? 2 : 0); else recordPracticeActivity(ex.skill || 'session', ok);")
+patch_app("if(q.vocab) updateMastery(vocabKey(q.vocab), ok ? 2 : 0);", "if(q.vocab) updateMastery(vocabKey(q.vocab), ok ? 2 : 0); else recordPracticeActivity(q.skill || 'quiz', ok);")
+patch_app("S.sessionHistory.filter(s => s.date === new Date().toISOString().slice(0,10)).reduce((a,b) => a + b.questions, 0)", "practiceSnapshot().today")
+patch_app("new Date().toISOString().slice(0,10)", "localStudyDate()")
+patch_app("new Date(Date.now() - 86400000).toISOString().slice(0,10)", "localStudyDate(new Date(Date.now() - 86400000))")
+patch_app("new Date(d.setDate(diff)).toISOString().slice(0,10)", "localStudyDate(new Date(d.setDate(diff)))")
+patch_app("sessionState.results.push({correct:true}); sessionState.idx++;", "recordPracticeActivity('mistakes', true); sessionState.results.push({correct:true}); sessionState.idx++;")
+patch_app("setTimeout(() => { sessionState.idx++; renderSessionCard($('#view')); }, 900);", "const nextButton = document.createElement('button'); nextButton.className='btn small'; nextButton.textContent='Next →'; nextButton.onclick=()=>{ sessionState.idx++; renderSessionCard($('#view')); }; body.appendChild(nextButton);")
+patch_app("setTimeout(() => { quizState.idx++; quizState.answered = false; renderQuiz(); }, 1100);", "const nextButton = document.createElement('button'); nextButton.className='btn small'; nextButton.textContent='Next →'; nextButton.onclick=()=>{ quizState.idx++; quizState.answered=false; renderQuiz(); }; $('#feedback').appendChild(nextButton);")
+patch_app("function renderSessionExercise(body, ex, w){", "function renderSessionExercise(body, ex, w){ delete body.dataset.done;")
+patch_app("if(p.store) localStorage.setItem(STORE.key, JSON.stringify(p.store)); alert(", "if(p.store){ localStorage.setItem(STORE.key, JSON.stringify(p.store)); markSystemEvent('import'); } alert(")
+patch_app("localStorage.removeItem(STORE.key); location.reload();", "localStorage.removeItem(STORE.key); markSystemEvent('reset'); location.reload();")
 
 # ---- v8 engine hooks ----
 # sentence builder: case-insensitive, accepts every valid word order supplied by the generator
-replace("const ok = user === correct;",
+patch_app("const ok = user === correct;",
         "const norm = s => String(s).toLowerCase().replace(/[.!?]+$/,'').replace(/\\s+/g,' ').trim(); "
         "const ok = norm(user) === norm(correct) || (item.accept || []).some(a => norm(a) === norm(user)); "
         "if(!$('#sbCheck').dataset.logged){ recordPracticeActivity('sentence', ok); $('#sbCheck').dataset.logged = '1'; }")
 # adaptive statistics for generated grammar exercises (session + exam)
-replace("sessionState.results.push({correct:ok});", "if(window.EX) EX.record(ex, ok); sessionState.results.push({correct:ok});")
-replace("const correct = results.filter(r => r.ok).length;", "results.forEach(r => { recordPracticeActivity(r.q.skill || 'exam', r.ok); if(window.EX) EX.record(r.q, r.ok); }); const correct = results.filter(r => r.ok).length;")
+patch_app("sessionState.results.push({correct:ok});", "if(window.EX) EX.record(ex, ok); sessionState.results.push({correct:ok});")
+patch_app("const correct = results.filter(r => r.ok).length;", "results.forEach(r => { recordPracticeActivity(r.q.skill || 'exam', r.ok); if(window.EX) EX.record(r.q, r.ok); }); const correct = results.filter(r => r.ok).length;")
 # new routes (account / admin); admin view is only reachable for verified admins and RLS protects the data anyway
-replace("connectors:viewConnectors, collocations:viewCollocations, compare:viewCompare", "connectors:viewConnectors, collocations:viewCollocations, compare:viewCompare, account:(window.viewAccount||viewHome), admin:(window.viewAdmin||viewHome)")
+patch_app("connectors:viewConnectors, collocations:viewCollocations, compare:viewCompare", "connectors:viewConnectors, collocations:viewCollocations, compare:viewCompare, account:(window.viewAccount||viewHome), admin:(window.viewAdmin||viewHome)")
 src = src.replace('<title>Sprachtreppe — German A1–B1 Master Course v5.4</title>', '<title>Sprachtreppe — German A1–B1</title>')
 src = src.replace('<title>German A1–B1 · Offline Master Course v5.3</title>', '<title>Sprachtreppe — German A1–B1</title>')
 src = src.replace('A1→B1 · v5.4', 'A1→B1 · v8')
@@ -85,8 +104,10 @@ parts = [(root / 'course' / f).read_text(encoding='utf-8') for f in
 theme = (root / 'course/theme.css').read_text(encoding='utf-8')
 shim = (root / 'course/native-shim.js').read_text(encoding='utf-8')
 cfg_js = 'window.SP_CONFIG=' + json.dumps(config) + ';\n'
-replace('</head>', '<style>' + theme + '</style><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icons/icon-192.png"><meta name="mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1e6feb"></head>', 1)
-replace("$('#themeBtn').onclick =", cfg_js + '\n'.join(parts) + "\n$('#themeBtn').onclick =", 1)
+src = src.replace('<!-- COURSE_BASE_CSS -->', '<style>' + base_css + '</style>', 1)
+src = src.replace('</head>', '<style>' + theme + '</style><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icons/icon-192.png"><meta name="mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1e6feb"></head>', 1)
+patch_app("$('#themeBtn').onclick =", cfg_js + '\n'.join(parts) + "\n$('#themeBtn').onclick =", 1)
+src = src.replace('<!-- COURSE_APP_SCRIPT -->', '<script>' + app_src + '</script>', 1)
 i = src.rindex('</body>')
 src = src[:i] + '<script>' + shim + '</script>' + src[i:]
 
