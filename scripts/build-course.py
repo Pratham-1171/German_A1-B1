@@ -59,7 +59,7 @@ cfg_file = root / 'course/config.local.json'
 if (not url or not key) and cfg_file.exists():
     c = json.loads(cfg_file.read_text()); url = url or c.get('url', ''); key = key or c.get('key', '')
 if url or key:
-    if not re.fullmatch(r'https://[a-z0-9-]+\\.supabase\\.(co|in)', url):
+    if not re.fullmatch(r'https://[a-z0-9-]+\.supabase\.(co|in)', url):
         raise SystemExit('SUPABASE_URL must look like https://<project>.supabase.co')
     if len(key) < 30 or 'service_role' in key.lower():
         raise SystemExit('SUPABASE_ANON_KEY missing or invalid. NEVER put the service_role key in the app.')
