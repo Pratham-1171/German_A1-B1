@@ -1,7 +1,7 @@
 name: Build Android APK
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, lms-mobile-ui]
   workflow_dispatch:
     inputs:
       local_mode:
@@ -23,12 +23,12 @@ jobs:
       - run: npm ci
       - name: Run the test-suite (grammar engine, app screens, login/sync, database security rules)
         run: npm test
-      - name: Build the course (injects the backend address)
+      - name: Build the course with LMS + mobile UI
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           ALLOW_LOCAL_MODE: ${{ inputs.local_mode && '1' || '' }}
-        run: python3 scripts/build-course.py
+        run: python3 scripts/build-course-lms.py
       - run: npx cap sync android
       - name: Build debug APK
         working-directory: android
