@@ -16,7 +16,7 @@
       try {
         let url = typeof input === 'string' ? input : input && input.url;
         if (url && /\/auth\/v1\/recover(?:\?|$)/.test(url) && !/[?&]redirect_to=/.test(url)) {
-          const redirectTo = location.origin + location.pathname;
+          const redirectTo = 'https://pratham-1171.github.io/German_A1-B1/';
           url += (url.indexOf('?') >= 0 ? '&' : '?') + 'redirect_to=' + encodeURIComponent(redirectTo);
           if (typeof input === 'string') input = url;
           else input = new Request(url, input);
