@@ -26,16 +26,28 @@
     };
   }
 
-  const hash = String(location.hash || '');
-  if (!/(^|[#&])type=recovery(?:&|$)/.test(hash)) return;
+  const hash = new URLSearchParams(String(location.hash || '').replace(/^#/, ''));
+  const query = new URLSearchParams(location.search || '');
+  const get = key => hash.get(key) || query.get(key);
+  const type = get('type') || '';
+  const access = get('access_token');
+  const errorCode = get('error_code') || get('error') || '';
+  const errorDescription = get('error_description') || '';
+  const recoveryError = /otp_expired|access_denied/i.test(errorCode) ||
+    /password recovery|recovery link|reset link|otp expired/i.test(errorDescription);
+  if (type !== 'recovery' && !recoveryError) return;
 
-  const params = new URLSearchParams(hash.replace(/^#/, ''));
-  const access = params.get('access_token');
-  const type = params.get('type');
-  if (!access || type !== 'recovery') return;
-
-  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
-  if (!cfg.url || !cfg.key) return;
+  // Remove sensitive values from the address bar after capturing them.
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  if (!access || type !== 'recovery' || !cfg.url || !cfg.key) {
+    const notice = document.createElement('div');
+    notice.id = 'spRecoveryError';
+    notice.style.cssText = 'position:fixed;inset:0;z-index:20000;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto;background:#13161c;color:#fff;font:16px system-ui,sans-serif';
+    notice.innerHTML = '<section style="box-sizing:border-box;width:min(430px,100%);padding:24px;border:1px solid #394150;border-radius:16px;background:#1c212b"><h2>Password reset link</h2><p>This link has expired, was already used, or did not return a valid recovery session.</p><p>Go back to Sprachtreppe, select <b>Forgot password?</b>, and request a new email. Open the newest link in your browser.</p><button id="spRecoveryBack" style="width:100%;padding:12px;border:0;border-radius:10px;background:#1e6feb;color:white;font:inherit">Back to Sprachtreppe</button></section>';
+    document.body.appendChild(notice);
+    notice.querySelector('#spRecoveryBack').onclick = () => { location.href = 'https://pratham-1171.github.io/German_A1-B1/'; };
+    return;
+  }
 
   const css = document.createElement('style');
   css.textContent = `
