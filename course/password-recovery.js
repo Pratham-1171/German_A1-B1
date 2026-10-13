@@ -5,21 +5,38 @@
  */
 (function () {
   'use strict';
+  const cfg = window.SP_CONFIG || {};
+
+  // The existing login code calls /auth/v1/recover directly. Intercept that request
+  // and provide the production app URL explicitly so Supabase returns to the app
+  // instead of falling back to an incorrect Site URL.
+  const nativeFetch = window.fetch;
+  if (typeof nativeFetch === 'function') {
+    window.fetch = function (input, init) {
+      try {
+        let url = typeof input === 'string' ? input : input && input.url;
+        if (url && /\/auth\/v1\/recover(?:\?|$)/.test(url) && !/[?&]redirect_to=/.test(url)) {
+          const redirectTo = location.origin + location.pathname;
+          url += (url.indexOf('?') >= 0 ? '&' : '?') + 'redirect_to=' + encodeURIComponent(redirectTo);
+          if (typeof input === 'string') input = url;
+          else input = new Request(url, input);
+        }
+      } catch (e) {}
+      return nativeFetch.call(this, input, init);
+    };
+  }
+
   const hash = String(location.hash || '');
   if (!/(^|[#&])type=recovery(?:&|$)/.test(hash)) return;
 
   const params = new URLSearchParams(hash.replace(/^#/, ''));
   const access = params.get('access_token');
-  const refresh = params.get('refresh_token');
   const type = params.get('type');
   if (!access || type !== 'recovery') return;
 
   try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
-
-  const cfg = window.SP_CONFIG || {};
   if (!cfg.url || !cfg.key) return;
 
-  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const css = document.createElement('style');
   css.textContent = `
     #spRecovery{position:fixed;inset:0;z-index:20000;background:var(--bg,#13161c);color:var(--text,#fff);display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto}
@@ -55,11 +72,7 @@
   async function updatePassword(password) {
     const res = await fetch(cfg.url + '/auth/v1/user', {
       method: 'PUT',
-      headers: {
-        apikey: cfg.key,
-        Authorization: 'Bearer ' + access,
-        'Content-Type': 'application/json'
-      },
+      headers: {apikey: cfg.key, Authorization: 'Bearer ' + access, 'Content-Type': 'application/json'},
       body: JSON.stringify({password})
     });
     let data = null;
@@ -69,8 +82,7 @@
   }
 
   btn.onclick = async () => {
-    const a = pw1.value;
-    const b = pw2.value;
+    const a = pw1.value, b = pw2.value;
     if (a.length < 10 || !/[A-Za-z]/.test(a) || !/\d/.test(a)) {
       msg.className = 'msg bad'; msg.textContent = 'Use at least 10 characters with letters and numbers.'; return;
     }
@@ -80,7 +92,7 @@
       await updatePassword(a);
       msg.className = 'msg ok'; msg.textContent = 'Password updated successfully. You can now sign in.';
       pw1.value = ''; pw2.value = '';
-      setTimeout(() => { box.remove(); if (typeof window.showLogin === 'function') window.showLogin('Password updated. Please sign in.'); else location.reload(); }, 1200);
+      setTimeout(() => { box.remove(); location.hash = ''; location.reload(); }, 1200);
     } catch (e) {
       msg.className = 'msg bad'; msg.textContent = 'This reset link is invalid or expired. Request a new one.';
       btn.disabled = false;
