@@ -24,7 +24,10 @@ app_module_files = [
     'core-engine.js',
     'exercise-registry.js',
     'navigation.js',
-    'views-learning.js',
+    'views-dashboard.js',
+    'views-vocabulary.js',
+    'views-grammar.js',
+    'views-communication.js',
     'views-practice.js',
     'settings-boot.js',
 ]

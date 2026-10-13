@@ -2,6 +2,7 @@
  * Practice, exam, resources, and progress screens.
  * Build: scripts/build-course.py concatenates modules in its declared order.
  */
+let connState = {practice:false, queue:[], idx:0, score:0, answered:false};
 function viewConnectors(el){
   if(connState.practice){ renderConnectorPractice(el); return; }
   el.innerHTML = `<h2>${t('connectors_title')}</h2><p class="sub">Function, clause type, word order.</p>
