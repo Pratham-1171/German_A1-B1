@@ -12,6 +12,17 @@ const PW = 'Correct-Horse-9';
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 const $ = (w, selector) => w.document.querySelector(selector);
 const realErrors = errors => errors.filter(e => !/scrollTo|Not implemented/.test(e));
+const EXERCISE_ROUTES = ['home','session','review','mistakes','vocab','articles','flash','quiz','sentence','spelling','dictation','families','verbs','pronounce','synonyms','patterns','grammar','listen','speak','read','write','exam','resources','progress','settings','connectors','collocations','compare','account'];
+async function assertStaffCannotOpenExercises(w) {
+  for (const route of EXERCISE_ROUTES) {
+    assert.equal(w.SP_LMS.canVisit(route), false, route + ' must be blocked for staff');
+    assert.equal(await attemptForbiddenRoute(w, route), '#/assignments', route + ' must redirect to Assignments');
+  }
+}
+function simulateNavigationRebuild(w) {
+  w.eval("NAV.splice(0, NAV.length, ['home','nav_home'], ['grammar','nav_grammar'], ['admin','nav_admin']);");
+  w.SP_LMS.refreshNavigation();
+}
 let htmlPath;
 function builtLmsPage() {
   if (htmlPath) return htmlPath;
@@ -59,8 +70,9 @@ test('teachers only see classroom, assignments and announcements; learning route
   const nav = await routes(w);
   assert.deepEqual(nav, ['classroom', 'assignments', 'announcements']);
   assert.ok(!nav.some(r => ['home','session','review','vocab','grammar','quiz','flash','read','write','exam','progress','settings'].includes(r)));
-  assert.equal(await attemptForbiddenRoute(w, 'grammar'), '#/assignments');
-  assert.equal(await attemptForbiddenRoute(w, 'quiz'), '#/assignments');
+  await assertStaffCannotOpenExercises(w);
+  simulateNavigationRebuild(w);
+  assert.deepEqual(await routes(w), ['classroom','assignments','announcements']);
   assert.ok(!realErrors(errors).length, realErrors(errors).join('\\n'));
 });
 
@@ -74,8 +86,9 @@ test('admins see only review and LMS-management tabs, not the exercise course', 
   const nav = await routes(w);
   assert.deepEqual(nav, ['admin','classroom','assignments','announcements','audit','teachers']);
   assert.ok(!nav.some(r => ['home','session','review','vocab','grammar','quiz','flash','read','write','exam','progress','settings'].includes(r)));
-  assert.equal(await attemptForbiddenRoute(w, 'grammar'), '#/assignments');
-  assert.equal(await attemptForbiddenRoute(w, 'session'), '#/assignments');
+  await assertStaffCannotOpenExercises(w);
+  simulateNavigationRebuild(w);
+  assert.deepEqual(await routes(w), ['admin','classroom','assignments','announcements','audit','teachers']);
   assert.ok(!realErrors(errors).length, realErrors(errors).join('\\n'));
 });
 

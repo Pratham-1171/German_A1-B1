@@ -517,6 +517,10 @@
 
   /* ---------------- boot ---------------- */
   function syncNav() {
+    if (window.SP_LMS && typeof window.SP_LMS.refreshNavigation === 'function') {
+      window.SP_LMS.refreshNavigation();
+      return;
+    }
     if (typeof NAV === 'undefined') return;
     const i = NAV.findIndex(n => n[0] === 'admin');
     if (isAdmin() && i < 0) NAV.splice(1, 0, ['admin', 'nav_admin']);
