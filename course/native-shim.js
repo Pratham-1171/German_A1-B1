@@ -1,9 +1,18 @@
 /* PWA registration + Android native helpers (share sheet for exports) */
 (function(){
   var cap = window.Capacitor, native = cap && cap.isNativePlatform && cap.isNativePlatform();
-  if(!native && 'serviceWorker' in navigator && /^https?:/.test(location.protocol)){
-    window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+
+  // The Android build loads the web app from GitHub Pages. Registering the
+  // service worker there gives the installed APK the same offline cache and
+  // lets HTML/CSS/JS updates arrive without reinstalling the APK.
+  if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) {
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('./sw.js', {scope:'./'}).then(function(reg){
+        if (reg.update) reg.update().catch(function(){});
+      }).catch(function(){});
+    });
   }
+
   if(!native) return;
   document.addEventListener('click', function(ev){
     var a = ev.target.closest && ev.target.closest('a[download]');
