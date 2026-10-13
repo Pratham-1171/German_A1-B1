@@ -1,0 +1,28 @@
+/* Sprachtreppe LMS mobile overflow hardening. */
+html,body{max-width:100%;overflow-x:hidden}
+.lms-wrap,.lms-head,.lms-grid,.lms-list,.lms-item,.lms-form,.lms-actions,.lms-kpi,.lms-notice,.lms-msg{box-sizing:border-box;min-width:0;max-width:100%}
+.lms-wrap{width:100%;overflow:visible}
+.lms-head>div{min-width:0;max-width:100%}
+.lms-head h2,.lms-head .sub{overflow-wrap:anywhere;word-break:break-word}
+.lms-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))}
+.lms-grid>*{min-width:0;max-width:100%}
+.lms-item{width:100%;overflow:hidden}
+.lms-item h3,.lms-meta{overflow-wrap:anywhere;word-break:break-word}
+.lms-actions{width:100%;align-items:stretch}
+.lms-actions>*{box-sizing:border-box;min-width:0;max-width:100%}
+.lms-actions select,.lms-actions input,.lms-actions textarea{flex:1 1 180px;width:100%}
+.lms-actions .btn{flex:1 1 150px;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+.lms-chip{max-width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+.lms-kpi b{overflow-wrap:anywhere}
+.lms-table-wrap{max-width:100%;min-width:0;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+.lms-table{min-width:max-content}
+@media(max-width:650px){
+  .lms-wrap{padding:0;}
+  .lms-head{width:100%;gap:8px;}
+  .lms-role{flex:0 0 auto;}
+  .lms-grid{grid-template-columns:minmax(0,1fr);}
+  .lms-actions{display:grid;grid-template-columns:minmax(0,1fr);}
+  .lms-actions>*{width:100%!important;max-width:100%!important;}
+  .lms-actions .btn{flex:none;}
+  .lms-kpi{width:100%;}
+}
