@@ -62,11 +62,11 @@ function syncStaffChrome(){
    lastRoleKey=roleKey;
    nav();
    if(staff()){
-     const current=(location.hash||'#/home').replace(/^#\\//,'').split('?')[0]||'home';
+     const current=(location.hash||'#/home').replace(/^#\//,'').split('?')[0]||'home';
      if(!canVisit(current))location.hash='#/assignments';
    }
  }
- const current=(location.hash||'#/home').replace(/^#\\//,'').split('?')[0]||'home';
+ const current=(location.hash||'#/home').replace(/^#\//,'').split('?')[0]||'home';
  if(staff()&&!canVisit(current))location.hash='#/assignments';
 }
 syncStaffChrome();setInterval(syncStaffChrome,700);
