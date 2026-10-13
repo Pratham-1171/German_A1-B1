@@ -311,7 +311,7 @@
             const keep = email;
             codeSent = true; resendAt = Date.now() + 30000; msg = ''; draw();
             box.querySelector('#spEmail').value = keep;
-            setErr('Request accepted. Check inbox and spam. For a numeric code, Supabase → Authentication → Email Templates → Magic Link must contain {{ .Token }}.', true);
+            setErr('If this address belongs to an administrator, a code was sent. Check inbox and spam. For a numeric code, Supabase → Authentication → Email Templates → Magic Link must contain {{ .Token }}.', true);
           } catch (e) {
             setErr(e.offline ? 'No internet connection.'
               : e.status === 429 ? 'Supabase is limiting email requests. Wait at least 30–60 seconds before retrying.'
