@@ -19,7 +19,8 @@ function route(){
   const r = raw.split('?')[0] || 'home';
   /* Staff dashboards restrict learning routes. Account and Settings are shared;
      Admin is reserved for approved administrators. */
-  const staffAllowed = r === 'account' || r === 'settings' || (r === 'admin' && window.SP_LMS && window.SP_LMS.isAdmin && window.SP_LMS.isAdmin());
+  const authProfile = window.SP_AUTH && window.SP_AUTH._state ? ((window.SP_AUTH._state().auth || {}).profile || {}) : {};
+  const staffAllowed = r === 'account' || r === 'settings' || (r === 'admin' && authProfile.role === 'admin' && authProfile.approved);
   if (window.SP_LMS && !staffAllowed && !window.SP_LMS.canVisit(r)) {
     if (location.hash !== '#/assignments') location.hash = '#/assignments';
     return;
