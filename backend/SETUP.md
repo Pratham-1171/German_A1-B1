@@ -18,6 +18,21 @@ Nothing secret is ever placed inside the app.
    ```
    This is the only way to create an admin. Students cannot do it, not even by modifying the app.
 
+## 2b. Passwordless admin sign-in (emailed code) — one-time template change
+The Admin tab signs in with a 6-digit code sent to the admin's email (no password to remember or leak). Supabase's default email
+contains only a link, so add the code to it:
+1. **Authentication → Emails → Templates → Magic Link** (older dashboards: Authentication → Email Templates).
+2. Replace the body with, for example:
+   ```html
+   <h2>Sprachtreppe admin sign-in</h2>
+   <p>Your code: <b>{{ .Token }}</b></p>
+   <p>It expires soon and works once. If you did not ask for it, ignore this email.</p>
+   ```
+3. Save. Supabase's built-in sender delivers to your own (project owner / team member) email, which is all the admin needs.
+   Limits: about 2 emails per hour on the built-in sender, one code per minute per address.
+In the app: **Admin tab → type your email → Send me a code → enter the code**. "Use password instead" stays available.
+Only an account whose role is `admin` gets in; students who try the Admin tab are refused.
+
 ## 3. Recommended Authentication settings (Authentication → Sign In / Providers, and Settings)
 * **Email**: leave enabled. **Minimum password length: 10**. For a classroom you may switch **Confirm email** off so students can start at once —
   they still cannot send anything until you approve them.
