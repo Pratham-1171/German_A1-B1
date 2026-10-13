@@ -17,7 +17,9 @@ function setActiveNav(route){
 function route(){
   const raw = (location.hash || '#/home').replace(/^#\//,'');
   const r = raw.split('?')[0] || 'home';
-  if (window.SP_LMS && !window.SP_LMS.canVisit(r)) {
+  /* Staff dashboards intentionally restrict course routes, but Settings remains
+     available to admin/teacher accounts through the header settings button. */
+  if (window.SP_LMS && r !== 'settings' && !window.SP_LMS.canVisit(r)) {
     if (location.hash !== '#/assignments') location.hash = '#/assignments';
     return;
   }
@@ -77,4 +79,5 @@ function readSetupPanel(root, idPrefix){
 
 /* ============================================================
    HOME
-   ============================================================ */
+   ============================================================
+*/
