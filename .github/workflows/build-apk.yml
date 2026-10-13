@@ -1,7 +1,7 @@
 name: Build Android APK
 on:
   push:
-    branches: [main, master, lms-mobile-ui]
+    branches: [main, master, lms-mobile-ui, 'refactor/course-modules']
   workflow_dispatch:
     inputs:
       local_mode:

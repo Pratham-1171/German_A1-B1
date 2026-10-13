@@ -78,7 +78,8 @@
     auth.profile = p; saveAuth(); return p;
   }
   const isAdmin = () => !!(auth && auth.profile && auth.profile.role === 'admin' && auth.profile.approved);
-  const isStudent = () => !!(auth && auth.profile && !isAdmin());
+  const isTeacher = () => !!(auth && auth.profile && auth.profile.role === 'teacher' && auth.profile.approved);
+  const isStudent = () => !!(auth && auth.profile && auth.profile.role === 'student');
 
   function adoptUser(uid) {      // every account keeps its own progress on a shared device
     const owner = localStorage.getItem(K_OWNER), key = STORE.key;
@@ -400,6 +401,7 @@
       b.onclick = () => { location.hash = '#/account'; }; hdr.insertBefore(b, set);
     }
     if (isAdmin()) { c.textContent = 'Admin'; c.className = ''; return; }
+    if (isTeacher()) { c.textContent = 'Teacher'; c.className = ''; return; }
     if (!isStudent()) { c.textContent = ''; return; }
     if (!auth.profile.approved) { c.textContent = 'Awaiting approval'; c.className = 'warn'; return; }
     const st = lockState();
@@ -559,7 +561,7 @@
     }
   }
 
-  window.SP_AUTH = Object.assign(window.SP_AUTH, {syncNow, lockState, signOut, buildSnapshot, isAdmin, isStudent, _state: () => ({auth, sync})});
+  window.SP_AUTH = Object.assign(window.SP_AUTH, {syncNow, lockState, signOut, buildSnapshot, isAdmin, isTeacher, isStudent, _state: () => ({auth, sync})});
   css();
   const emailLink = pendingEmailLink();
   if (emailLink) {
