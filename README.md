@@ -18,13 +18,13 @@ and ambiguous quiz options (duplicate or also-correct collocation verbs).
 ## Accounts, sync and review
 * **Student**: register → teacher approves → study offline → progress is sent automatically when online; **must connect at least once every 7 days**
   (warning from day 5; on day 7 the app locks until a sync succeeds). Everything studied while locked-out is kept and sent.
-* **Admin**: signs in with the same login screen (Admin tab). Console: approvals, to-review list, overdue list, per-student detail
+* **Admin**: signs in on the Admin tab with an emailed 6-digit code (no password needed; see `backend/SETUP.md` §2b). Console: approvals, to-review list, overdue list, per-student detail
   (accuracy, weak skills, frequent mistakes, writing samples), feedback + rating, CSV export.
 
 ### Security — what is and is not protected
 | Question | Answer |
 |---|---|
-| Is the admin password in the app/APK/GitHub? | **No.** Admin signs in against Supabase Auth; only a bcrypt hash exists, on the server. Nothing to scrape. |
+| Is the admin password in the app/APK/GitHub? | **No.** Admin signs in with a one-time code emailed by Supabase (or a password checked by Supabase Auth, where only a bcrypt hash exists). Nothing to scrape. |
 | Can a student read other students or become admin by editing the app? | **No.** Enforced by database row-level-security (tested on a real PostgreSQL engine, `tests/sql.test.js`). |
 | Can a student fake his results? | The app sends what the app computed; a determined student with a rooted phone could alter his own numbers. The server stores them with **server time**; the teacher sees the writing samples and mistakes themselves. |
 | Can a student avoid the weekly sync? | The lock uses a monotonic clock (setting the phone clock back does not help) but it is a client-side nudge. The authoritative list is **Admin → Overdue** (server time). |
