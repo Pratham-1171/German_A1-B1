@@ -74,7 +74,7 @@ test('admins see only review and LMS-management tabs, not the exercise course', 
   const nav = await routes(w);
   assert.deepEqual(nav, ['classroom','students','assignments','announcements','notifications','audit','teachers']);
   assert.ok(!nav.some(r => ['home','session','review','vocab','grammar','quiz','flash','read','write','exam','progress','settings'].includes(r)));
-  assert.equal(await attemptForbiddenRoute(w, 'grammar'), '#/students');
+  assert.equal(await attemptForbiddenRoute(w, 'grammar'), '#/assignments');
   assert.equal(await attemptForbiddenRoute(w, 'session'), '#/assignments');
   assert.ok(!realErrors(errors).length, realErrors(errors).join('\\n'));
 });
