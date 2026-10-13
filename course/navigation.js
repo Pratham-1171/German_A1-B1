@@ -17,6 +17,10 @@ function setActiveNav(route){
 function route(){
   const raw = (location.hash || '#/home').replace(/^#\//,'');
   const r = raw.split('?')[0] || 'home';
+  if (window.SP_LMS && !window.SP_LMS.canVisit(r)) {
+    if (location.hash !== '#/assignments') location.hash = '#/assignments';
+    return;
+  }
   S.lastView = r; STORE.save();
   setActiveNav(r);
   const view = $('#view');
