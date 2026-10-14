@@ -13,6 +13,14 @@ test('local build: every screen renders without a script error', async () => {
   assert.equal(w.__SP_ENGINE_VERSION, '8.0-grammar-core');
   assert.equal(w.SP_AUTH.enabled, false, 'local mode has no login');
 });
+
+test('PWA manifest uses the shared Sprachtreppe theme colors', () => {
+  const file = build({ALLOW_LOCAL_MODE: '1'});
+  const manifest = JSON.parse(require('node:fs').readFileSync(file.replace(/index\\.html$/, 'manifest.webmanifest'), 'utf8'));
+  assert.equal(manifest.theme_color, '#315f52');
+  assert.equal(manifest.background_color, '#ffffff');
+});
+
 test('reading screen is interactive and scores answers', async () => {
   const {window: w, errors} = load(build({ALLOW_LOCAL_MODE: '1'})); await wait(600);
   await go(w, 'read'); const opts = [...w.document.querySelectorAll('.rd-opts .opt')]; assert.equal(opts.length, 20);
