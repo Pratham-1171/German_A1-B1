@@ -16,7 +16,7 @@ test('local build: every screen renders without a script error', async () => {
 
 test('PWA manifest uses the shared Sprachtreppe theme colors', () => {
   const file = build({ALLOW_LOCAL_MODE: '1'});
-  const manifest = JSON.parse(require('node:fs').readFileSync(file.replace(/index\\.html$/, 'manifest.webmanifest'), 'utf8'));
+  const manifest = JSON.parse(require('node:fs').readFileSync(file.replace('index.html', 'manifest.webmanifest'), 'utf8'));
   assert.equal(manifest.theme_color, '#315f52');
   assert.equal(manifest.background_color, '#ffffff');
 });
